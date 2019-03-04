@@ -37,5 +37,45 @@ def yes24_check_rest_seat():
       print('{} {}'.format(date, seat_info))
 
 
+class InterparkPlayInfo(object):
+  def __init__(self, data):
+    self.play_date = data['Playdate']
+    self.play_seq = data['PlaySeq']
+    self.play_time = data['PlayTime'].strip()
+    self.play_time_value = data['PlayTimeValue']
+    self.seat = True if data['SeatYN'] == 'Y' else False
+    self.balance_seat = True if data['BalanceSeatYN'] == 'Y' else False
+    self.online_date = data['OnlineDate']
+    self.no_of_time = data['NoOfTime']
+    self.cancelable_date = data['CancelableDate']
+
+  def __str__(self):
+    return f"play_date={self.play_date}, play_seq={self.play_seq}, play_time={self.play_time}, seat={self.seat}"
+
+
+def interpark_check_seat():
+
+  def get_play_info(session, play_date):
+    def parse_response(response_json):
+      return [InterparkPlayInfo(s) for s in response_json['JSON']]
+
+    url = f"http://ticket.interpark.com/Ticket/Goods/GoodsInfoJSON.asp?Flag=PlaySeq&GoodsCode={goods_code}&PlaceCode=17000398&PlayDate={play_date}&Callback=parse_response"
+
+    result = session.get(url)
+    return eval(result.text[:-1])
+
+  goods_code = '18011457'
+  play_dates = ['20190305', '20190306', '20190307', '20190309',
+                '20190310', '20190312', '20190313', '20190314', '20190316',
+                '20190317', '20190319', '20190320', '20190321', '20190322', '20190323',
+                '20190324', '20190326', '20190327', '20190328']
+
+  session = requests.Session()
+  session.headers.update({'referer': f"http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode={goods_code}"})
+
+  play_infos = [get_play_info(session, date) for date in play_dates]
+  seat_info = [info for list_info in play_infos for info in list_info if info.seat]
+  print(seat_info)
+
 if __name__ =='__main__':
-  setInterval(yes24_check_rest_seat, 30)
+  setInterval(interpark_check_seat, 30)
